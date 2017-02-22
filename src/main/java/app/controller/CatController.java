@@ -10,63 +10,49 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-
 
 @RestController
-
+@RequestMapping("cat")
 public class CatController {
 
     @Autowired
-    private CatRepository сatRepository;
+    private CatRepository catRepository;
 
-    @RequestMapping(method = RequestMethod.POST, value = "/cat/")
-    public Map<String, Object> createCat(@RequestBody Cat cat) {
-        Map<String, Object> response = new LinkedHashMap<String, Object>();
-        response.put("message", "сat created successfully");
-        response.put("сat", сatRepository.save(cat));
-        return response;
+    @RequestMapping (method = RequestMethod.POST)
+    public ResponseEntity<Cat> createCat(@RequestBody Cat cat) {
+        if (cat.getId() != null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(catRepository.save(cat));
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/cat/{сatId}")
-    public ResponseEntity<Cat> getCatDetails(@PathVariable("сatId") String сatId) {
-        Cat cat = сatRepository.findOne(сatId);
+    @RequestMapping (method = RequestMethod.GET, value = "{catId}")
+    public ResponseEntity<Cat> getCat(@PathVariable("catId") String сatId) {
+        Cat cat = catRepository.findOne(сatId);
         return cat == null ? ResponseEntity.notFound().<Cat>build() : ResponseEntity.ok(cat);
     }
 
-    @RequestMapping( method = RequestMethod.PUT,value = "/cat/{catID}")
-    public Map<String, Object> editCat(@PathVariable("сatId") String сatId,
-                                       @RequestBody Map<String, Object> сatMap) {
-        Cat сat = new Cat(сatMap.get("name").toString(),
-                сatMap.get("sex").toString(),
-                сatMap.get("birthday").toString());
-        сat.setId(сatId);
-
-        Map<String, Object> response = new LinkedHashMap<String, Object>();
-        response.put("message", "Cat Updated successfully");
-        response.put("Cat", сatRepository.save(сat));
-        return response;
+    @RequestMapping (method = RequestMethod.PUT)
+    public ResponseEntity<Cat> editCat(@RequestBody Cat cat) {
+        if (!catRepository.exists(cat.getId())) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.accepted().body(catRepository.save(cat));
     }
 
 
-    @RequestMapping(method = RequestMethod.DELETE, value = "/cat/{catId}" )
-    public Map<String, String> deleteCat(@PathVariable("сatId") String сatId) {
-        сatRepository.delete(сatId);
-        Map<String, String> response = new HashMap<String, String>();
-        response.put("message", "Cat deleted successfully");
-
-        return response;
+    @RequestMapping (method = RequestMethod.DELETE, value = "{catId}")
+    public ResponseEntity<Cat> deleteCat(@PathVariable("catId") String catId) {
+        if (!catRepository.exists(catId)) {
+            return ResponseEntity.noContent().build();
+        }
+        catRepository.delete(catId);
+        return ResponseEntity.noContent().build();
     }
 
-    @RequestMapping(method = RequestMethod.GET)
-    public Map<String, Object> getAllCats() {
-        List<Cat> сats = сatRepository.findAll();
-        Map<String, Object> response = new LinkedHashMap<String, Object>();
-        response.put("totalCats", сats.size());
-        response.put("Cats", сats);
-        return response;
+    @RequestMapping (method = RequestMethod.GET)
+    public ResponseEntity<List<Cat>> getAllCats() {
+        return ResponseEntity.ok(catRepository.findAll());
     }
 }
